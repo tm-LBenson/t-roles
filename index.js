@@ -6,6 +6,8 @@ const {
   ApplicationCommandOptionType,
   ChannelType,
 } = require('discord.js');
+const { google } = require('googleapis');
+const youtube = google.youtube('v3');
 
 const client = new Client({
   intents: [
@@ -17,14 +19,60 @@ const client = new Client({
   partials: [Partials.Message, Partials.Reaction, Partials.User],
 });
 
+const CHECK_INTERVAL = 10 * 60 * 1000; // 10 minutes in milliseconds
+const CHANNEL_ID = 'UCeeFfhMcJa1kjtfZAGskOCA'; // Replace with the actual channel ID
+let lastVideoId = null;
+
 const reactionRolesMap = new Map([
   ['🔴', 'red_role'],
   ['👍', 'user'],
 ]);
+async function checkForNewVideos() {
+  youtube.search.list(
+    {
+      key: process.env.YOUTUBE_API_KEY,
+      channelId: CHANNEL_ID,
+      order: 'date',
+      part: 'snippet',
+      type: 'video',
+      maxResults: 1,
+    },
+    (err, response) => {
+      if (err) {
+        console.log('The API returned an error: ' + err);
+        return;
+      }
+
+      const latestVideo = response.data.items[0];
+      if (!latestVideo) {
+        console.log('No video found.');
+        return;
+      }
+
+      if (lastVideoId !== latestVideo.id.videoId) {
+        lastVideoId = latestVideo.id.videoId;
+        const videoUrl = `https://www.youtube.com/watch?v=${latestVideo.id.videoId}`;
+        const message = `New video by TechLinked: ${latestVideo.snippet.title} - ${videoUrl}`;
+
+        sendMessageToChannel(message);
+      }
+    }
+  );
+}
+
+function sendMessageToChannel(message) {
+  const channel = client.channels.cache.get('1208062375845040248');
+  if (channel) {
+    channel.send(message);
+  } else {
+    console.log('Channel not found.');
+  }
+}
 
 client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`);
-
+  setInterval(checkForNewVideos, CHECK_INTERVAL);
+  checkForNewVideos();
   const data = {
     name: 't-message',
     description: 'Send a message to a specified channel',
