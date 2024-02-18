@@ -20,7 +20,7 @@ const client = new Client({
 });
 
 const CHECK_INTERVAL = 10 * 60 * 1000; // 10 minutes in milliseconds
-const CHANNEL_ID = 'UCeeFfhMcJa1kjtfZAGskOCA'; // Replace with the actual channel ID
+const CHANNEL_ID = 'UCeeFfhMcJa1kjtfZAGskOCA';
 let lastVideoId = null;
 
 const reactionRolesMap = new Map([
@@ -28,36 +28,40 @@ const reactionRolesMap = new Map([
   ['👍', 'user'],
 ]);
 async function checkForNewVideos() {
-  youtube.search.list(
-    {
+  try {
+    const response = await youtube.search.list({
       key: process.env.YOUTUBE_API_KEY,
       channelId: CHANNEL_ID,
       order: 'date',
       part: 'snippet',
       type: 'video',
       maxResults: 1,
-    },
-    (err, response) => {
-      if (err) {
-        console.log('The API returned an error: ' + err);
-        return;
-      }
+    });
 
-      const latestVideo = response.data.items[0];
-      if (!latestVideo) {
-        console.log('No video found.');
-        return;
-      }
-
-      if (lastVideoId !== latestVideo.id.videoId) {
-        lastVideoId = latestVideo.id.videoId;
-        const videoUrl = `https://www.youtube.com/watch?v=${latestVideo.id.videoId}`;
-        const message = `New video by TechLinked: ${latestVideo.snippet.title} - ${videoUrl}`;
-
-        sendMessageToChannel(message);
-      }
+    const latestVideo = response.data.items[0];
+    if (!latestVideo) {
+      console.log('No video found.');
+      return;
     }
-  );
+
+    const videoUrl = `https://www.youtube.com/watch?v=${latestVideo.id.videoId}`;
+
+    const channel = client.channels.cache.get('1208062375845040248');
+
+    const alreadyPosted = await hasVideoBeenPosted(channel, videoUrl);
+    if (!alreadyPosted) {
+      const message = `New video by TechLinked: ${latestVideo.snippet.title} - ${videoUrl}`;
+      await channel.send(message);
+      lastVideoId = latestVideo.id.videoId;
+    }
+  } catch (err) {
+    console.error('The API returned an error: ' + err);
+  }
+}
+
+async function hasVideoBeenPosted(channel, videoUrl) {
+  const messages = await channel.messages.fetch({ limit: 10 });
+  return messages.some((message) => message.content.includes(videoUrl));
 }
 
 function sendMessageToChannel(message) {
