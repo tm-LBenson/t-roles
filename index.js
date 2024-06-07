@@ -150,4 +150,4 @@ client.on('messageReactionRemove', async (reaction, user) => {
   }
 });
 
-client.login(process.env.DISCORD_BOT_TOKEN);
+client.login(process.env.DISCORD_BOT_TOKEN_T_ROLES);

@@ -1,6 +1,6 @@
 {
   "name": "t-roles",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "T-Roles is an interactive Discord bot designed to manage server roles through reactions. Users can self-assign roles by reacting to messages with specific emojis, allowing for easy and efficient role management. This bot is perfect for communities that want to streamline their role assignment process and engage members in a user-friendly way.",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,6 @@
   "license": "MIT",
   "dependencies": {
     "discord.js": "^14.14.1",
-    "dotenv": "^16.4.4",
-    "googleapis": "^133.0.0"
+    "dotenv": "^16.4.4"
   }
 }
